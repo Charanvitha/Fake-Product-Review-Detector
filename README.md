@@ -2,6 +2,8 @@
 
 A Machine Learning web app that detects whether an e-commerce product review is **Fake** or **Genuine** using NLP.
 
+Demo link:https://charanvitha-fake-product-review-detector-app-3i8p0p.streamlit.app/
+
 ## 🚀 Features
 - Detects Fake vs Genuine reviews
 - Shows prediction confidence score
