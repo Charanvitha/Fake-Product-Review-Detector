@@ -1,0 +1,10 @@
+venv/
+out/
+*.class
+*.jar
+*.log
+server.pid
+model.pkl
+__pycache__/
+.env
+.vscode/

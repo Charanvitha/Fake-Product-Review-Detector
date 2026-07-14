@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fake Product Review Detector</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      background: #eef2f5;
+      color: #17202a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 28px 16px;
+    }
+
+    main {
+      width: min(1060px, 100%);
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.9rem, 3vw, 2.55rem);
+      line-height: 1.1;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1.1rem;
+    }
+
+    p {
+      margin: 0;
+      color: #52606d;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel,
+    .result,
+    .stat,
+    .batch-item {
+      background: #ffffff;
+      border: 1px solid #d9e1e8;
+      border-radius: 8px;
+      box-shadow: 0 16px 42px rgba(23, 32, 42, 0.07);
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 174px;
+      resize: vertical;
+      border: 1px solid #b8c4cf;
+      border-radius: 8px;
+      padding: 14px;
+      font: inherit;
+      line-height: 1.45;
+      background: #ffffff;
+    }
+
+    textarea:focus {
+      outline: 3px solid #b7d7ff;
+      border-color: #2f80ed;
+    }
+
+    .actions,
+    .samples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      background: #14532d;
+      color: #ffffff;
+      font: inherit;
+      font-weight: 800;
+      padding: 11px 15px;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #2f4f66;
+    }
+
+    button.ghost {
+      background: #e7edf2;
+      color: #17202a;
+    }
+
+    button:hover {
+      filter: brightness(0.92);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      padding: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.45rem;
+    }
+
+    .stat span {
+      color: #52606d;
+      font-size: 0.9rem;
+    }
+
+    .result {
+      margin-top: 16px;
+      padding: 16px;
+      min-height: 74px;
+      background: #fbfcfd;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .status {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .fake {
+      color: #b42318;
+    }
+
+    .genuine {
+      color: #137333;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .metric {
+      border: 1px solid #d9e1e8;
+      border-radius: 8px;
+      padding: 10px;
+      background: #ffffff;
+    }
+
+    .metric span {
+      display: block;
+      color: #52606d;
+      font-size: 0.82rem;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 3px;
+    }
+
+    ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      color: #3c4856;
+    }
+
+    .batch-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .batch-item {
+      padding: 12px;
+      box-shadow: none;
+    }
+
+    .review-text {
+      margin-top: 8px;
+      color: #52606d;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 820px) {
+      .grid,
+      .metrics,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Fake Product Review Detector</h1>
+      <p>Classify a review, inspect risk signals, or analyze multiple reviews at once.</p>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Single Review</h2>
+        <form id="reviewForm">
+          <label for="review">Review text</label>
+          <textarea id="review" name="review" placeholder="Example: Best product ever!!! Must buy!!!"></textarea>
+          <div class="actions">
+            <button type="submit">Detect Review</button>
+            <button class="ghost" type="button" id="clearSingle">Clear</button>
+          </div>
+        </form>
+
+        <div class="samples">
+          <button class="secondary" type="button" data-sample="Very good quality and worth the price">Genuine sample</button>
+          <button class="secondary" type="button" data-sample="Best product ever!!! Must buy!!!">Fake sample</button>
+        </div>
+
+        <section id="result" class="result hidden" aria-live="polite"></section>
+      </section>
+
+      <aside>
+        <section class="stats" id="stats"></section>
+
+        <section class="panel">
+          <h2>Batch Analysis</h2>
+          <form id="batchForm">
+            <label for="batchReviews">One review per line</label>
+            <textarea id="batchReviews" name="reviews" placeholder="Very good quality and worth the price&#10;Best product ever!!! Must buy!!!"></textarea>
+            <div class="actions">
+              <button type="submit">Analyze Batch</button>
+              <button class="ghost" type="button" id="clearBatch">Clear</button>
+            </div>
+          </form>
+          <section id="batchResult" class="result hidden" aria-live="polite"></section>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const form = document.querySelector("#reviewForm");
+    const batchForm = document.querySelector("#batchForm");
+    const result = document.querySelector("#result");
+    const batchResult = document.querySelector("#batchResult");
+    const reviewInput = document.querySelector("#review");
+    const batchInput = document.querySelector("#batchReviews");
+
+    loadStats();
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      result.className = "result";
+      result.textContent = "Checking review...";
+
+      const response = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ review: reviewInput.value })
+      });
+
+      const data = await response.json();
+      result.innerHTML = response.ok
+        ? renderPrediction(data)
+        : `<div class="status fake">${escapeHtml(data.error)}</div>`;
+    });
+
+    batchForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      batchResult.className = "result";
+      batchResult.textContent = "Analyzing reviews...";
+
+      const response = await fetch("/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ reviews: batchInput.value })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        batchResult.innerHTML = `<div class="status fake">${escapeHtml(data.error)}</div>`;
+        return;
+      }
+
+      batchResult.innerHTML = `
+        <div class="status">Analyzed ${data.totalReviews} reviews</div>
+        <div class="metrics">
+          <div class="metric"><span>Fake</span><strong>${data.fakeReviews}</strong></div>
+          <div class="metric"><span>Genuine</span><strong>${data.genuineReviews}</strong></div>
+          <div class="metric"><span>Total</span><strong>${data.totalReviews}</strong></div>
+          <div class="metric"><span>Fake rate</span><strong>${Math.round((data.fakeReviews / data.totalReviews) * 100)}%</strong></div>
+        </div>
+        <div class="batch-list">${data.results.map(renderBatchItem).join("")}</div>
+      `;
+    });
+
+    document.querySelectorAll("[data-sample]").forEach((button) => {
+      button.addEventListener("click", () => {
+        reviewInput.value = button.dataset.sample;
+        reviewInput.focus();
+      });
+    });
+
+    document.querySelector("#clearSingle").addEventListener("click", () => {
+      reviewInput.value = "";
+      result.className = "result hidden";
+      result.textContent = "";
+    });
+
+    document.querySelector("#clearBatch").addEventListener("click", () => {
+      batchInput.value = "";
+      batchResult.className = "result hidden";
+      batchResult.textContent = "";
+    });
+
+    async function loadStats() {
+      const response = await fetch("/stats");
+      const stats = await response.json();
+      document.querySelector("#stats").innerHTML = `
+        <div class="stat"><strong>${stats.trainingSamples}</strong><span>Training samples</span></div>
+        <div class="stat"><strong>${stats.vocabularySize}</strong><span>Vocabulary terms</span></div>
+        <div class="stat"><strong>${stats.fakeSamples}</strong><span>Fake examples</span></div>
+        <div class="stat"><strong>${stats.genuineSamples}</strong><span>Genuine examples</span></div>
+      `;
+    }
+
+    function renderPrediction(data) {
+      const labelClass = data.numericLabel === 1 ? "fake" : "genuine";
+      const reasonItems = data.reasons.length
+        ? data.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")
+        : "<li>No suspicious patterns detected.</li>";
+      const keywords = data.matchedKeywords.length ? data.matchedKeywords.join(", ") : "None";
+
+      return `
+        <div class="status ${labelClass}">${data.label} Review Detected</div>
+        <div class="metrics">
+          <div class="metric"><span>Confidence</span><strong>${Number(data.confidence).toFixed(2)}%</strong></div>
+          <div class="metric"><span>Fake probability</span><strong>${Number(data.fakeProbability).toFixed(2)}%</strong></div>
+          <div class="metric"><span>Risk</span><strong>${escapeHtml(data.riskLevel)}</strong></div>
+          <div class="metric"><span>Words</span><strong>${data.wordCount}</strong></div>
+        </div>
+        <div>Matched keywords: ${escapeHtml(keywords)}</div>
+        <ul>${reasonItems}</ul>
+      `;
+    }
+
+    function renderBatchItem(data) {
+      const labelClass = data.numericLabel === 1 ? "fake" : "genuine";
+      return `
+        <article class="batch-item">
+          <div class="status ${labelClass}">${data.label} - ${Number(data.confidence).toFixed(2)}% confidence</div>
+          <div>Risk: ${escapeHtml(data.riskLevel)} | Words: ${data.wordCount} | Exclamation marks: ${data.exclamationCount}</div>
+          <div class="review-text">${escapeHtml(data.review)}</div>
+        </article>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+      }[character]));
+    }
+  </script>
+</body>
+</html>
